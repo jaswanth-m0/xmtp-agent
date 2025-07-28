@@ -3,7 +3,7 @@ import {
   getEncryptionKeyFromHex,
   logAgentDetails,
   validateEnvironment,
-} from "./client
+} from "./client";
 import { Client, Group, type XmtpEnv } from "@xmtp/node-sdk"; 
 
 /* Get the wallet key associated to the public key of
