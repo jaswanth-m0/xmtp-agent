@@ -78,7 +78,7 @@ export const getDbPath = (description: string = "xmtp") => {
 };
 
 export const logAgentDetails = async (
-  clients: Client | Client[],
+  clients: Client | Client[]
 ): Promise<void> => {
   const clientArray = Array.isArray(clients) ? clients : [clients];
   const clientsByAddress = clientArray.reduce<Record<string, Client[]>>(
@@ -88,11 +88,11 @@ export const logAgentDetails = async (
       acc[address].push(client);
       return acc;
     },
-    {},
+    {}
   );
   // Get XMTP SDK version from package.json
   const require = createRequire(import.meta.url);
-  const packageJson = require("../package.json") as {
+  const packageJson = require("./package.json") as {
     dependencies: Record<string, string>;
   };
   const xmtpSdkVersion = packageJson.dependencies["@xmtp/node-sdk"];
@@ -134,7 +134,7 @@ export const logAgentDetails = async (
     const keyPackageStatus = keyPackageStatuses[installationId];
     if (keyPackageStatus.lifetime) {
       createdDate = new Date(
-        Number(keyPackageStatus.lifetime.notBefore) * 1000,
+        Number(keyPackageStatus.lifetime.notBefore) * 1000
       );
       expiryDate = new Date(Number(keyPackageStatus.lifetime.notAfter) * 1000);
     }
