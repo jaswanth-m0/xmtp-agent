@@ -3,8 +3,8 @@ import {
   getEncryptionKeyFromHex,
   logAgentDetails,
   validateEnvironment,
-} from "./client";
-import { Client, Group, type XmtpEnv } from "@xmtp/node-sdk"; 
+} from "@helpers/client";
+import { Client, Group, type XmtpEnv } from "@xmtp/node-sdk";
 
 /* Get the wallet key associated to the public key of
  * the agent and the encryption key for the local db
@@ -41,7 +41,7 @@ async function main() {
         console.log("No message received");
         return;
       }
-      console.log(message)
+      console.log(message);
       void (async () => {
         // Skip if the message is from the agent
         if (
@@ -55,7 +55,7 @@ async function main() {
         }
 
         const conversation = await client.conversations.getConversationById(
-          message.conversationId,
+          message.conversationId
         );
 
         if (!conversation) {

@@ -91,16 +91,16 @@ export const logAgentDetails = async (
     {}
   );
   // Get XMTP SDK version from package.json
-  const require = createRequire(import.meta.url);
-  const packageJson = require("./package.json") as {
-    dependencies: Record<string, string>;
-  };
-  const xmtpSdkVersion = packageJson.dependencies["@xmtp/node-sdk"];
-  const bindingVersion = (
-    require("./node_modules/@xmtp/node-bindings/package.json") as {
-      version: string;
-    }
-  ).version;
+  // const require = createRequire(import.meta.url);
+  // const packageJson = require("./package.json") as {
+  //   dependencies: Record<string, string>;
+  // };
+  // const xmtpSdkVersion = packageJson.dependencies["@xmtp/node-sdk"];
+  // const bindingVersion = (
+  //   require("./node_modules/@xmtp/node-bindings/package.json") as {
+  //     version: string;
+  //   }
+  // ).version;
 
   for (const [address, clientGroup] of Object.entries(clientsByAddress)) {
     const firstClient = clientGroup[0];
@@ -141,8 +141,6 @@ export const logAgentDetails = async (
     console.log(`
     ✓ XMTP Client:
     • InboxId: ${inboxId}
-    • SDK: ${xmtpSdkVersion}
-    • Bindings: ${bindingVersion}
     • Version: ${Client.version}
     • Address: ${address}
     • Conversations: ${conversations.length}

@@ -4,7 +4,7 @@
 import express from "express";
 import cors from "cors";
 import { Client, ConversationType, Group, type XmtpEnv } from "@xmtp/node-sdk";
-import { createSigner, getEncryptionKeyFromHex, logAgentDetails, validateEnvironment } from "./client";
+import { createSigner, getEncryptionKeyFromHex, logAgentDetails, validateEnvironment } from "./client.js";
 
 // Get the wallet key associated to the public key of
 // the agent and the encryption key for the local db
@@ -32,6 +32,7 @@ async function initializeXMTPClient() {
   const client = await Client.create(signer, {
     dbEncryptionKey,
     env: XMTP_ENV as XmtpEnv,
+    dbPath:null
   });
 
   void logAgentDetails(client);
