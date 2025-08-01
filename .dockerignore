@@ -1,9 +1,9 @@
-node_modules
-dist
-*.log
-*.db3*
-*.db3.*
-screenshot.png
-.git
-.gitignore
-.env.*
+# node_modules
+# dist
+# *.log
+# *.db3*
+# *.db3.*
+# screenshot.png
+# .git
+# .gitignore
+# .env.*

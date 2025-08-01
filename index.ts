@@ -3,18 +3,36 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import express from "express";
 import cors from "cors";
-import { Client, ConversationType, Group, type XmtpEnv } from "@xmtp/node-sdk";
-import { createSigner, getEncryptionKeyFromHex, logAgentDetails, validateEnvironment } from "./client.js";
+import {
+  Client,
+  ConversationType,
+  Group,
+  Identifier,
+  IdentifierKind,
+  type XmtpEnv,
+} from "@xmtp/node-sdk";
+import {
+  createSigner,
+  getEncryptionKeyFromHex,
+  logAgentDetails,
+  validateEnvironment,
+} from "./client.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
 // Get the wallet key associated to the public key of
 // the agent and the encryption key for the local db
 // that stores your agent's messages
-const { WALLET_KEY, ENCRYPTION_KEY, XMTP_ENV, PORT } = validateEnvironment([
-  "WALLET_KEY",
-  "ENCRYPTION_KEY",
-  "XMTP_ENV",
-  "PORT", // Add PORT to environment variables
-]);
+const { WALLET_KEY, ENCRYPTION_KEY, XMTP_ENV, PORT, WALLET_ADDRESS } =
+  validateEnvironment([
+    "WALLET_KEY",
+    "ENCRYPTION_KEY",
+    "XMTP_ENV",
+    "PORT", // Add PORT to environment variables
+    "WALLET_ADDRESS",
+  ]);
 
 // Create the signer using viem and parse the encryption key for the local db
 const signer = createSigner(WALLET_KEY);
@@ -24,16 +42,38 @@ const dbEncryptionKey = getEncryptionKeyFromHex(ENCRYPTION_KEY);
 let xmtpClient: Client;
 
 // Express app setup
-const app = express();
+const app = express();  
 app.use(cors());
 app.use(express.json());
 
+// Add these lines at the top (after imports)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 async function initializeXMTPClient() {
-  const client = await Client.create(signer, {
-    dbEncryptionKey,
-    env: XMTP_ENV as XmtpEnv,
-    dbPath:null
-  });
+  const identifier: Identifier = {
+    identifier: WALLET_ADDRESS.toLowerCase(),
+    identifierKind: IdentifierKind.Ethereum,
+  };
+
+  // Go one step back from __dirname (project root)
+  const projectRoot = path.resolve(__dirname, "..");
+  const rootFiles = fs.readdirSync(projectRoot);
+  // Check for .db3 files in the project root
+  const hasDb3 = rootFiles.some((file) => file.endsWith(".db3"));
+  console.log("Has .db3 file:", hasDb3);
+
+  let client: Client;
+  if (hasDb3) {
+    client = await Client.build(identifier, {
+      env: XMTP_ENV as XmtpEnv,
+    });
+  } else {
+    client = await Client.create(signer, {
+      env: XMTP_ENV as XmtpEnv,
+    });
+    await client.revokeAllOtherInstallations();
+  }
 
   void logAgentDetails(client);
   console.log("✓ Syncing conversations...");
@@ -42,48 +82,6 @@ async function initializeXMTPClient() {
   xmtpClient = client;
   return client;
 }
-
-// Stream all messages for GM responses
-const messageStream = (client: Client) => {
-  console.log("Waiting for messages...");
-  void client.conversations.streamAllMessages((error, message) => {
-    if (error) {
-      console.error("Error in message stream:", error);
-      return;
-    }
-    if (!message) {
-      console.log("No message received");
-      return;
-    }
-    console.log(message);
-    void (async () => {
-      // Skip if the message is from the agent
-      if (
-        message.senderInboxId.toLowerCase() === client.inboxId.toLowerCase()
-      ) {
-        return;
-      }
-      // Skip if the message is not a text message
-      if (message.contentType?.typeId !== "text") {
-        return;
-      }
-      const conversation = await client.conversations.getConversationById(
-        message.conversationId
-      );
-      if (!conversation) {
-        console.log("Unable to find conversation, skipping");
-        return;
-      }
-      //Getting the address from the inbox id
-      const inboxState = await client.preferences.inboxStateFromInboxIds([
-        message.senderInboxId,
-      ]);
-      const addressFromInboxId = inboxState[0].identifiers[0].identifier;
-      console.log(`Sending "gm" response to ${addressFromInboxId}...`);
-      await conversation.send("gm m0 employeesssss");
-    })();
-  });
-};
 
 // API Routes
 
@@ -114,8 +112,8 @@ app.get("/api/conversations", async (req, res) => {
 
     const conversationData = conversations.map((conv) => ({
       id: conv.id,
-      name:(conv as any).name,
-      description : (conv as any).description
+      name: (conv as any).name,
+      description: (conv as any).description,
     }));
 
     res.json({ conversations: conversationData });
@@ -137,10 +135,7 @@ app.get("/health", (req, res) => {
 async function main() {
   try {
     // Initialize XMTP client
-    const client = await initializeXMTPClient();
-
-    // Start the message stream
-    messageStream(client);
+    await initializeXMTPClient();
 
     // Start the Express server
     const port = PORT || 3000;
